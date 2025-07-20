@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Country Info Speaker</title>
+  <style>
+    :root {
+      --bg-light: #f5f5f5;
+      --bg-dark: #121212;
+      --text-light: #333;
+      --text-dark: #f1f1f1;
+      --card-light: rgba(255, 255, 255, 0.85);
+      --card-dark: rgba(30, 30, 30, 0.85);
+      --btn-light: #007bff;
+      --btn-dark: #3399ff;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: var(--bg-light);
+      color: var(--text-light);
+      height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin: 0;
+      transition: background-color 0.4s, color 0.4s;
+    }
+
+    .dark-mode {
+      background: var(--bg-dark);
+      color: var(--text-dark);
+    }
+
+    .container {
+      background-color: var(--card-light);
+      padding: 30px 40px;
+      border-radius: 16px;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+      text-align: center;
+      width: 90%;
+      max-width: 450px;
+      transition: all 0.4s;
+      position: relative;
+      overflow: hidden;
+      backdrop-filter: blur(2px);
+    }
+
+    .container.with-bg {
+      background-color: rgba(255, 255, 255, 0.7);
+    }
+
+    .dark-mode .container {
+      background-color: var(--card-dark);
+    }
+
+    .dark-mode .container.with-bg {
+      background-color: rgba(30, 30, 30, 0.7);
+    }
+
+    .container-bg {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-size: contain;
+      background-position: center;
+      background-repeat: no-repeat;
+      opacity: 0.2;
+      z-index: -1;
+      filter: brightness(0.8);
+    }
+
+    h2 {
+      margin-bottom: 20px;
+      position: relative;
+    }
+
+    input[type="text"] {
+      width: 100%;
+      padding: 10px 15px;
+      font-size: 16px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      margin-bottom: 15px;
+      outline: none;
+      background-color: rgba(255, 255, 255, 0.8);
+    }
+
+    .dark-mode input[type="text"] {
+      background-color: rgba(50, 50, 50, 0.8);
+      color: white;
+      border-color: #555;
+    }
+
+    button {
+      padding: 10px 20px;
+      font-size: 16px;
+      border: none;
+      border-radius: 8px;
+      background-color: var(--btn-light);
+      color: white;
+      cursor: pointer;
+      margin-top: 10px;
+      transition: background-color 0.3s;
+    }
+
+    button:hover {
+      background-color: #0056b3;
+    }
+
+    .dark-mode button {
+      background-color: var(--btn-dark);
+    }
+
+    .dark-mode button:hover {
+      background-color: #1a7fff;
+    }
+
+    #value {
+      margin-top: 20px;
+      font-weight: bold;
+      font-size: 18px;
+      text-align: left;
+      line-height: 1.6;
+    }
+
+    #flag {
+      margin: 15px auto;
+      max-width: 120px;
+      border-radius: 6px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+      opacity: 0;
+      transition: opacity 0.5s ease;
+      display: block;
+    }
+
+    #flag.show {
+      opacity: 1;
+    }
+
+    .toggle-dark {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      padding: 8px 16px;
+      background: #444;
+      color: white;
+      border: none;
+      border-radius: 20px;
+      cursor: pointer;
+      font-size: 14px;
+      transition: background-color 0.3s;
+      z-index: 10;
+    }
+
+    .toggle-voice {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      padding: 8px 16px;
+      background: #444;
+      color: white;
+      border: none;
+      border-radius: 20px;
+      cursor: pointer;
+      font-size: 14px;
+      transition: background-color 0.3s;
+      z-index: 10;
+    }
+
+    .dark-mode .toggle-dark,
+    .dark-mode .toggle-voice {
+      background: #ccc;
+      color: #000;
+    }
+
+    .info-item {
+      margin-bottom: 8px;
+    }
+
+    .info-label {
+      font-weight: bold;
+    }
+
+    .loading {
+      display: inline-block;
+      width: 20px;
+      height: 20px;
+      border: 3px solid rgba(0, 0, 0, 0.3);
+      border-radius: 50%;
+      border-top-color: #007bff;
+      animation: spin 1s ease-in-out infinite;
+    }
+
+    .dark-mode .loading {
+      border-top-color: #3399ff;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body>
+  <button class="toggle-dark" id="toggleDark">🌙 Dark Mode</button>
+  <button class="toggle-voice" id="toggleVoice">🔊 Voice On</button>
+
+  <div class="container" id="container">
+    <div class="container-bg" id="containerBg"></div>
+    <h2>Country Info Speaker</h2>
+    <input type="text" id="countryInput" placeholder="Enter country name" />
+    <button id="submit">Submit</button>
+    <div id="value"></div>
+    <img id="flag" src="" alt="Country flag" hidden />
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const body = document.body;
+      const toggleDark = document.getElementById('toggleDark');
+      const toggleVoice = document.getElementById('toggleVoice');
+      const submitBtn = document.getElementById('submit');
+      const input = document.getElementById('countryInput');
+      const valueEl = document.getElementById('value');
+      const flagEl = document.getElementById('flag');
+      const container = document.getElementById('container');
+      const containerBg = document.getElementById('containerBg');
+
+      let voiceEnabled = localStorage.getItem('voiceEnabled') !== 'false'; // Default to true
+      updateVoiceButton();
+
+      // Dark mode toggle
+      toggleDark.addEventListener('click', () => {
+        body.classList.toggle('dark-mode');
+        toggleDark.textContent = body.classList.contains('dark-mode') ? '☀️ Light Mode' : '🌙 Dark Mode';
+        localStorage.setItem('darkMode', body.classList.contains('dark-mode'));
+      });
+
+      // Voice toggle
+      toggleVoice.addEventListener('click', () => {
+        voiceEnabled = !voiceEnabled;
+        localStorage.setItem('voiceEnabled', voiceEnabled);
+        updateVoiceButton();
+      });
+
+       function updateVoiceButton() {
+        toggleVoice.textContent = voiceEnabled ? '🔇 Voice Off' : '🔊 Voice On';
+      }
+
+      // Check for saved preferences
+      if (localStorage.getItem('darkMode') === 'true') {
+        body.classList.add('dark-mode');
+        toggleDark.textContent = '☀️ Light Mode';
+      }
+
+      // Fetch country info
+      submitBtn.addEventListener('click', async () => {
+        const country = input.value.trim();
+        if (!country) {
+          showError('Please enter a country name.');
+          return;
+        }
+        
+        showLoading();
+        
+        try {
+          const res = await fetch(`https://restcountries.com/v3.1/name/${encodeURIComponent(country)}?fullText=true`);
+          
+          if (!res.ok) {
+            throw new Error('Country not found');
+          }
+          
+          const data = await res.json();
+          
+          if (!Array.isArray(data) || data.length === 0) {
+            throw new Error('Country data not available');
+          }
+          
+          const info = data[0];
+          displayCountryInfo(country, info);
+          setCardBackground(info);
+          if (voiceEnabled) {
+            speakCountryInfo(country, info);
+          }
+          
+        } catch (error) {
+          console.error('Error:', error);
+          showError('Country not found. Please check the spelling and try again.');
+          resetCardBackground();
+        }
+      });
+
+      function showLoading() {
+        valueEl.innerHTML = '<div class="loading"></div> Loading country information...';
+        flagEl.hidden = true;
+        flagEl.classList.remove('show');
+      }
+
+      function showError(message) {
+        valueEl.innerHTML = `<div class="info-item" style="color: #dc3545;">${message}</div>`;
+        flagEl.hidden = true;
+        flagEl.classList.remove('show');
+        resetCardBackground();
+      }
+
+      function displayCountryInfo(country, info) {
+        const languages = info.languages ? Object.values(info.languages).join(', ') : 'N/A';
+        const currencies = info.currencies ? Object.values(info.currencies).map(c => `${c.name} (${c.symbol || 'N/A'})`).join(', ') : 'N/A';
+        
+        valueEl.innerHTML = `
+          <div class="info-item"><span class="info-label">Country:</span> ${country}</div>
+          <div class="info-item"><span class="info-label">Capital:</span> ${info.capital?.[0] || 'N/A'}</div>
+          <div class="info-item"><span class="info-label">Population:</span> ${info.population.toLocaleString()}</div>
+          <div class="info-item"><span class="info-label">Languages:</span> ${languages}</div>
+          <div class="info-item"><span class="info-label">Currency:</span> ${currencies}</div>
+        `;
+        
+        if (info.flags?.svg || info.flags?.png) {
+          flagEl.src = info.flags.svg || info.flags.png;
+          flagEl.alt = `${country} flag`;
+          flagEl.hidden = false;
+          flagEl.classList.add('show');
+        } else {
+          flagEl.hidden = true;
+          flagEl.classList.remove('show');
+        }
+      }
+
+      function setCardBackground(info) {
+        container.classList.add('with-bg');
+        
+        // Set single centered background image
+        if (info.coatOfArms?.svg || info.coatOfArms?.png) {
+          containerBg.style.backgroundImage = `url(${info.coatOfArms.svg || info.coatOfArms.png})`;
+        } else if (info.flags?.svg || info.flags?.png) {
+          containerBg.style.backgroundImage = `url(${info.flags.svg || info.flags.png})`;
+        }
+        
+        // Adjust text color based on background brightness
+        adjustTextColor(info);
+      }
+
+      function resetCardBackground() {
+        container.classList.remove('with-bg');
+        containerBg.style.backgroundImage = 'none';
+      }
+
+      function adjustTextColor(info) {
+        // This is a simplified version - in a real app you might want to analyze the image colors
+        if (info.region === 'Europe' || info.region === 'North America') {
+          container.style.color = '#333';
+          valueEl.style.color = '#333';
+        } else {
+          container.style.color = '';
+          valueEl.style.color = '';
+        }
+      }
+
+      function speakCountryInfo(country, info) {
+        if (!('speechSynthesis' in window)) return;
+        
+        const languages = info.languages ? Object.values(info.languages).join(', ') : 'N/A';
+        const currencies = info.currencies ? Object.values(info.currencies).map(c => `${c.name} (${c.symbol || 'N/A'})`).join(', ') : 'N/A';
+        
+        const speechText = `
+          Information for ${country}.
+          Capital: ${info.capital?.[0] || 'N/A'}.
+          Population: ${info.population.toLocaleString()}.
+          Languages: ${languages}.
+          Currency: ${currencies}.
+        `;
+        
+        window.speechSynthesis.cancel(); // Cancel any previous speech
+        const speech = new SpeechSynthesisUtterance();
+        speech.text = speechText;
+        speech.lang = 'en-US';
+        speech.rate = 0.9;
+        window.speechSynthesis.speak(speech);
+      }
+
+      // Allow pressing Enter key to submit
+      input.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+          submitBtn.click();
+        }
+      });
+    });
+  </script>
+</body>
+</html>
